@@ -417,8 +417,8 @@ function renderDirectory(){
 function chooseListedUniversity(id){
   const u=universities.find(x=>String(x.id)===String(id));
   if(!u)return;
-  $("problemUniFilter").value=u.id;
-  renderProblems();
+  // Directory search/selection must not hide the homepage's recent community posts.
+  // University-specific filtering remains available through the Problems filter.
   $("problems").scrollIntoView({behavior:"smooth",block:"start"});
 }
 function openUniversityRequest(){
@@ -511,28 +511,45 @@ async function createProblem(){
  const uniId=$("postUniversity").value,title=$("postTitle").value.trim(),body=$("postBody").value.trim(),cat=$("postCategory").value,anon=$("postAnonymous").checked;
  if(!uniId||!title||!body){setMsg("postMsg","Please select a university and fill the required fields.");return}
  const u=universities.find(x=>String(x.id)===String(uniId));
+ if(!u?.db){setMsg("postMsg","This university is pending verification. Please select a listed university before publishing a public post.");return}
  const payload={title,body,category:cat,is_anonymous:anon,author_id:currentUser.id,author_name:anon?null:getAuthorName()};
- let saved=false;
- if(u?.db){
+ try{
    const r=await db.from("problems").insert({...payload,university_id:u.id}).select().single();
-   if(!r.error){saved=true}
+   if(r.error){
+     console.error("Problem publish failed:",r.error);
+     setMsg("postMsg",`Could not publish: ${r.error.message||"database error"}`);
+     return;
+   }
+   $("postTitle").value="";$("postBody").value="";$("postAnonymous").checked=false;closeModal("postModal");
+   await loadProblems();
+   notice("Problem published to the community. It is now visible across devices.");
+ }catch(e){
+   console.error("Problem publish failed:",e);
+   setMsg("postMsg",`Could not publish: ${e?.message||"database error"}`);
  }
- if(!saved){
-   const local={id:"local-"+Date.now(),university_id:uniId,uni:u?.name||"University",title,body,category:cat,votes_count:0,comments:0,anonymous:anon,author_name:anon?null:getAuthorName(),created_at:new Date().toISOString()};
-   const localPosts=JSON.parse(localStorage.getItem("campusreport_local_problems")||"[]");localPosts.unshift(local);localStorage.setItem("campusreport_local_problems",JSON.stringify(localPosts));problems.unshift(local);
+}
+async function syncLocalProblems(){
+ const raw=JSON.parse(localStorage.getItem("campusreport_local_problems")||"[]");
+ if(!currentUser||!raw.length)return;
+ const remaining=[]; let synced=0;
+ for(const p of raw){
+   const u=universities.find(x=>String(x.id)===String(p.university_id)&&x.db);
+   if(!u){remaining.push(p);continue}
+   const payload={title:p.title,body:p.body,category:p.category||"Other",is_anonymous:!!p.anonymous,author_id:currentUser.id,author_name:p.anonymous?null:(p.author_name||getAuthorName()),university_id:u.id};
+   try{const r=await db.from("problems").insert(payload); if(r.error)remaining.push(p); else synced++}catch(e){remaining.push(p)}
  }
- $("postTitle").value="";$("postBody").value="";$("postAnonymous").checked=false;closeModal("postModal");renderProblems();
- notice(saved?"Problem published to the community.":"Problem saved locally because this university is pending verification. Once the university is approved, its community posts can be published to Supabase.");
+ localStorage.setItem("campusreport_local_problems",JSON.stringify(remaining));
+ if(synced)notice(`${synced} local post${synced===1?"":"s"} synced to the public community.`);
 }
 async function loadProblems(){
  let arr=[];
  try{
   const r=await db.from("problems").select("*, universities(name)").order("created_at",{ascending:false});
   if(!r.error) arr=(r.data||[]).map(p=>({...p,uni:p.universities?.name||"University"}));
- }catch(e){}
- const local=JSON.parse(localStorage.getItem("campusreport_local_problems")||"[]");
- problems=[...arr,...local,...demoProblems];
- $("statProblems").textContent=Math.max(arr.length+local.length,4).toLocaleString();
+  else console.warn("Problems load failed:",r.error);
+ }catch(e){console.warn("Problems load failed:",e)}
+ problems=[...arr,...demoProblems];
+ $("statProblems").textContent=Math.max(arr.length,4).toLocaleString();
  if(currentUser&&arr.length){try{const ids=arr.map(p=>p.id);const v=await db.from("votes").select("problem_id").eq("user_id",currentUser.id).in("problem_id",ids);const set=new Set((v.data||[]).map(x=>x.problem_id));problems.forEach(p=>p.user_voted=set.has(p.id))}catch(e){}}
  renderProblems();
 }
@@ -568,10 +585,18 @@ async function reportProblem(id){
 }
 document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".modal.show").forEach(m=>m.classList.remove("show"))});
 async function init(){
- fillStates();updateNav();await loadUniversities();await loadProblems();
- try{const s=await db.auth.getSession();currentUser=s.data.session?.user||null;updateNav()}catch(e){}
+ fillStates();
+ try{const s=await db.auth.getSession();currentUser=s.data.session?.user||null}catch(e){currentUser=null}
+ updateNav();
+ await loadUniversities();
+ await syncLocalProblems();
+ await loadProblems();
 }
-db.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;updateNav()});
+db.auth.onAuthStateChange(async (_event,session)=>{
+ currentUser=session?.user||null;
+ updateNav();
+ if(currentUser){await syncLocalProblems();await loadProblems();}
+});
 init();
 </script>
 </body>
