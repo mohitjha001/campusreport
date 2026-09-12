@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#16a34a">
+<title>CampusReport — India's Student Voice</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+ --green:#16a34a;--green2:#15803d;--green3:#22c55e;--mint:#ecfdf3;
+ --ink:#101828;--muted:#667085;--line:#e4e7ec;--bg:#f7f9f8;--card:#fff;
+ --dark:#0b1720;--shadow:0 18px 55px rgba(16,24,40,.08);
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,textarea,select{font:inherit}button{cursor:pointer}
+a{color:inherit}.topbar{background:#07130d;color:#d1fae5;padding:8px 16px;text-align:center;font-size:12px}
+.topbar b{color:#86efac}
+header{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.91);backdrop-filter:blur(18px);border-bottom:1px solid rgba(228,231,236,.85)}
+.nav{max-width:1240px;margin:auto;padding:12px 18px;display:flex;align-items:center;gap:18px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:950;font-size:21px;white-space:nowrap}
+.logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#22c55e,#15803d);display:grid;place-items:center;box-shadow:0 10px 25px #16a34a35}
+.logo svg{width:26px}.brand .g{color:var(--green)}
+.navlinks{display:flex;gap:17px;margin-left:auto}.navlinks a{font-size:13px;font-weight:800;color:#475467;text-decoration:none}.navlinks a:hover{color:var(--green)}
+.nav-actions{display:flex;gap:8px;align-items:center}.btn{border:0;border-radius:12px;padding:11px 15px;font-weight:850;transition:.22s transform,.22s box-shadow,.22s background}.btn:hover{transform:translateY(-2px)}
+.primary{background:var(--green);color:white;box-shadow:0 10px 22px #16a34a25}.primary:hover{background:var(--green2)}
+.secondary{background:#dcfce7;color:#166534}.light{background:#f2f4f7;color:#344054}.ghost{background:transparent;color:#475467}
+.wrap{max-width:1240px;margin:auto;padding:0 18px}
+.hero{position:relative;overflow:hidden;padding:82px 18px 72px;background:
+ radial-gradient(circle at 8% 18%,#bbf7d0 0,transparent 28%),
+ radial-gradient(circle at 92% 12%,#d1fae5 0,transparent 25%),
+ linear-gradient(135deg,#effdf4,#fff)}
+.hero:before{content:"";position:absolute;width:520px;height:520px;border:1px solid #16a34a1c;border-radius:50%;right:-180px;top:-260px;animation:spin 24s linear infinite}
+.hero:after{content:"";position:absolute;width:330px;height:330px;border:70px solid #ffffff90;border-radius:50%;left:-190px;bottom:-210px}
+.hero-grid{max-width:1240px;margin:auto;position:relative;z-index:2;display:grid;grid-template-columns:1.08fr .92fr;gap:55px;align-items:center}
+.eyebrow{display:inline-flex;gap:8px;align-items:center;padding:8px 12px;background:#fff;border:1px solid #bbf7d0;color:#15803d;border-radius:999px;font-size:12px;font-weight:900;box-shadow:0 8px 20px #16a34a12}
+.pulse{width:8px;height:8px;background:#22c55e;border-radius:50%;box-shadow:0 0 0 0 #22c55e66;animation:pulse 1.8s infinite}
+.hero h1{font-size:clamp(42px,6vw,76px);line-height:.96;letter-spacing:-4px;margin:20px 0}
+.gradient{background:linear-gradient(90deg,#16a34a,#047857);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{max-width:720px;color:#667085;font-size:18px;line-height:1.7;margin:0 0 26px}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap}.hero-note{margin-top:14px;color:#667085;font-size:12px}
+.hero-visual{position:relative}.float-card{position:absolute;z-index:4;background:#fff;border:1px solid #e5e7eb;border-radius:15px;padding:11px 13px;box-shadow:0 18px 45px #10182816;font-size:12px;font-weight:850;animation:float 4.8s ease-in-out infinite}
+.float1{top:-14px;left:-30px}.float2{right:-22px;bottom:26px;animation-delay:-2s}.float3{left:10px;bottom:-28px;animation-delay:-1s}
+.dashboard{background:#ffffffdd;border:1px solid #fff;border-radius:28px;padding:18px;box-shadow:0 30px 90px #10182818;transform:rotate(1deg);animation:softFloat 6s ease-in-out infinite}
+.dash-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}.dash-title{font-weight:950}.live{padding:5px 8px;border-radius:999px;background:#dcfce7;color:#15803d;font-size:10px;font-weight:950}
+.problem-mini{padding:13px;border:1px solid var(--line);border-radius:15px;margin:9px 0;background:#fff}.problem-mini h4{margin:6px 0 4px;font-size:13px}.problem-mini p{margin:0;color:#667085;font-size:11px;line-height:1.45}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px}.pill{display:inline-block;padding:5px 8px;border-radius:999px;background:#ecfdf3;color:#15803d;font-size:10px;font-weight:900}
+.stats{margin-top:-26px;position:relative;z-index:8;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:18px;padding:19px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.stat:after{content:"";position:absolute;width:75px;height:75px;border-radius:50%;background:#ecfdf3;right:-25px;bottom:-30px}
+.stat-num{font-size:28px;font-weight:950}.stat-label{color:#667085;font-size:12px;margin-top:4px}
+.section{padding:72px 0}.section-head{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:24px}.section-head h2{margin:0;font-size:32px;letter-spacing:-1.2px}.section-head p{margin:7px 0 0;color:#667085;line-height:1.6;max-width:720px}.kicker{font-size:11px;font-weight:950;color:#15803d;text-transform:uppercase;letter-spacing:1.2px}
+.directory-shell{background:#fff;border:1px solid var(--line);border-radius:26px;padding:20px;box-shadow:var(--shadow)}
+.directory-top{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}.searchbox{position:relative;flex:1;min-width:240px}.searchbox span{position:absolute;left:13px;top:12px;color:#98a2b3}.input,.select{width:100%;border:1px solid #d9dde7;background:#fff;border-radius:12px;padding:12px 13px;outline:none}.searchbox .input{padding-left:38px}.input:focus,.select:focus{border-color:#86efac;box-shadow:0 0 0 4px #16a34a12}
+.filters{display:flex;gap:7px;flex-wrap:wrap}.filter{border:1px solid var(--line);background:#fff;color:#475467;padding:9px 12px;border-radius:999px;font-size:12px;font-weight:850}.filter.active{background:#dcfce7;color:#166534;border-color:#86efac}
+.dir-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.uni-card{border:1px solid var(--line);border-radius:17px;padding:16px;background:#fff;transition:.22s;cursor:pointer;position:relative;overflow:hidden}.uni-card:hover{transform:translateY(-4px);box-shadow:0 16px 35px #10182810;border-color:#bbf7d0}.uni-top{display:flex;gap:12px}.uni-logo{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,#dcfce7,#f0fdf4);color:#15803d;display:grid;place-items:center;font-weight:950;flex:none}.uni-card h3{font-size:14px;margin:1px 0 5px}.uni-meta{font-size:11px;color:#667085;line-height:1.45}.verified{color:#15803d;font-weight:900}.uni-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:13px;padding-top:11px;border-top:1px solid #f0f2f5}.type{font-size:10px;font-weight:900;color:#475467;background:#f2f4f7;padding:5px 7px;border-radius:999px}.open-link{font-size:11px;color:#15803d;font-weight:900}.missing{margin-top:15px;padding:16px;border-radius:17px;background:linear-gradient(135deg,#f0fdf4,#fff);border:1px dashed #86efac;display:flex;justify-content:space-between;align-items:center;gap:15px}.missing b{font-size:14px}.missing span{display:block;color:#667085;font-size:12px;margin-top:3px}
+.result-count{font-size:12px;color:#667085;margin:14px 0 0}.empty{grid-column:1/-1;text-align:center;padding:45px 20px;border:1px dashed #cfd5df;border-radius:17px;color:#667085}
+.problem-layout{display:grid;grid-template-columns:1.6fr .75fr;gap:18px}.controls{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:15px}.search-wide{flex:1;min-width:220px}.problem-grid{display:grid;gap:13px}.problem{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 28px #10182807;animation:rise .4s ease both}.problem:hover{box-shadow:var(--shadow)}.problem h3{font-size:17px;margin:9px 0 7px}.problem-meta{font-size:11px;color:#667085}.problem-body{font-size:13px;color:#475467;line-height:1.6;margin:11px 0}.problem-actions{display:flex;gap:7px;flex-wrap:wrap}.vote{border:1px solid #d9dde7;background:#fff;border-radius:10px;padding:8px 10px;font-size:11px;font-weight:900}.vote.active{background:#ecfdf3;border-color:#86efac;color:#15803d}.side-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:13px}.side-card h3{margin:0 0 12px;font-size:15px}.trend{padding:10px 0;border-bottom:1px solid #edf0f4}.trend:last-child{border-bottom:0}.trend b{font-size:12px}.trend small{display:block;color:#667085;margin-top:4px}
+.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.feature{background:#fff;border:1px solid var(--line);border-radius:19px;padding:21px;transition:.22s}.feature:hover{transform:translateY(-5px);box-shadow:var(--shadow)}.feature-icon{width:42px;height:42px;border-radius:13px;background:#ecfdf3;display:grid;place-items:center;font-size:19px}.feature h3{font-size:16px;margin:13px 0 7px}.feature p{font-size:12px;color:#667085;line-height:1.65;margin:0}
+.how{background:#07130d;color:#fff}.how .section-head p{color:#a7b5ad}.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}.step{background:#0d2116;border:1px solid #1b3b26;border-radius:18px;padding:20px}.step-num{width:34px;height:34px;border-radius:10px;background:#16a34a;display:grid;place-items:center;font-weight:950}.step h3{font-size:15px;margin:15px 0 7px}.step p{font-size:12px;color:#a7b5ad;line-height:1.6;margin:0}
+.cta{background:linear-gradient(135deg,#14532d,#16a34a);border-radius:27px;padding:35px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:25px;overflow:hidden;position:relative}.cta:after{content:"";position:absolute;width:240px;height:240px;border:55px solid #ffffff16;border-radius:50%;right:-80px;top:-110px}.cta h2{margin:0 0 7px;font-size:29px}.cta p{margin:0;color:#d1fae5;font-size:13px;line-height:1.6}.cta .btn{background:#fff;color:#166534;position:relative;z-index:2}
+.faq{display:grid;grid-template-columns:1fr 1fr;gap:12px}.faq details{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px}.faq summary{cursor:pointer;font-weight:850;font-size:13px}.faq p{font-size:12px;line-height:1.65;color:#667085}
+footer{background:#07130d;color:#c7d2cc;padding:52px 18px 24px}.foot{max-width:1240px;margin:auto;display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:30px}.foot h3{color:#fff;margin:0 0 11px}.foot p,.foot a{font-size:12px;color:#91a29a;line-height:1.7;text-decoration:none}.foot a{display:block;margin:7px 0}.copy{max-width:1240px;margin:32px auto 0;padding-top:17px;border-top:1px solid #1b2d22;color:#607067;font-size:11px}
+.notice{display:none;max-width:1240px;margin:12px auto;padding:12px 18px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:12px;font-size:12px}.notice.show{display:block}
+.modal{position:fixed;inset:0;background:#07130db8;display:none;align-items:center;justify-content:center;padding:15px;z-index:100}.modal.show{display:flex;animation:fade .18s ease}.box{width:min(620px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:23px;padding:22px;box-shadow:0 35px 100px #0005;animation:pop .22s ease}.box.smallbox{width:min(520px,100%)}.close{float:right;border:0;background:#f2f4f7;width:38px;height:38px;border-radius:11px}.box h2{margin:2px 0 5px;font-size:23px}.sub{color:#667085;font-size:12px;line-height:1.55}.field{margin:13px 0}.field label{display:block;font-size:11px;font-weight:900;margin-bottom:6px}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.msg{font-size:12px;color:#b42318;margin-top:9px}.success{color:#15803d!important}.choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:9px}.choice{border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px;text-align:left}.choice.active{border-color:#86efac;background:#ecfdf3}.choice b{font-size:12px}.choice small{display:block;color:#667085;margin-top:3px;font-size:10px}
+.toggle{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800}.toggle input{accent-color:var(--green)}
+.profile{font-size:11px;font-weight:850;color:#475467;background:#f2f4f7;border-radius:999px;padding:8px 10px}
+.hide{display:none!important}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+@keyframes softFloat{0%,100%{transform:rotate(1deg) translateY(0)}50%{transform:rotate(1deg) translateY(-7px)}}
+@keyframes pulse{70%{box-shadow:0 0 0 10px transparent}100%{box-shadow:0 0 0 0 transparent}}
+@keyframes spin{to{transform:rotate(360deg)}}@keyframes fade{from{opacity:0}to{opacity:1}}@keyframes pop{from{opacity:0;transform:scale(.97) translateY(8px)}to{opacity:1;transform:none}}
+@media(max-width:1000px){.hero-grid{grid-template-columns:1fr}.hero-visual{max-width:650px;margin:auto}.dir-grid{grid-template-columns:repeat(2,1fr)}.problem-layout{grid-template-columns:1fr}.feature-grid{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:repeat(2,1fr)}.foot{grid-template-columns:1fr 1fr}.navlinks{display:none}}
+@media(max-width:650px){.hero{padding:58px 18px 52px}.hero h1{letter-spacing:-2.5px}.stats{grid-template-columns:repeat(2,1fr)}.dir-grid,.feature-grid,.steps,.faq{grid-template-columns:1fr}.two,.choice-grid{grid-template-columns:1fr}.section{padding:54px 0}.section-head{display:block}.cta{display:block}.cta .btn{margin-top:18px}.float1{left:-5px}.float2{right:-5px}.nav{padding:9px 12px}.brand{font-size:18px}.logo{width:38px;height:38px}.nav-actions .light{display:none}.missing{display:block}.missing .btn{margin-top:12px}}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="topbar">🇮🇳 Built for students across India · <b>Government • Private • Deemed • State • Central universities</b></div>
+
+<header>
+<nav class="nav">
+<a class="brand" href="#home">
+<span class="logo"><svg viewBox="0 0 48 48" fill="none"><path d="M10 15.5A6.5 6.5 0 0 1 16.5 9h15A6.5 6.5 0 0 1 38 15.5v10A6.5 6.5 0 0 1 31.5 32H24l-7.2 6v-6h-.3A6.5 6.5 0 0 1 10 25.5v-10Z" stroke="white" stroke-width="3" stroke-linejoin="round"/><path d="M16 20h16M16 25h10" stroke="white" stroke-width="3" stroke-linecap="round"/><path d="M35 8l1.5 3.5L40 13l-3.5 1.5L35 18l-1.5-3.5L30 13l3.5-1.5L35 8Z" fill="white"/></svg></span>
+Campus<span class="g">Report</span></a>
+<div class="navlinks"><a href="#directory" onclick="showFullDirectory()">Universities</a><a href="#problems">Problems</a><a href="#features">Features</a><a href="#how">How it works</a><a href="#faq">FAQ</a></div>
+<div class="nav-actions" id="navActions"></div>
+</nav>
+</header>
+
+<div id="notice" class="notice"></div>
+
+<section class="hero" id="home">
+<div class="hero-grid">
+<div>
+<span class="eyebrow"><span class="pulse"></span> India's student-powered community</span>
+<h1>Every campus has a story.<br><span class="gradient">Make yours heard.</span></h1>
+<p>Find your university, join its community, report real student problems, vote on issues that matter and discuss solutions — even when your university is not already in our directory.</p>
+<div class="hero-actions"><button class="btn primary" onclick="openPost()">＋ Report a Problem</button><button class="btn light" onclick="openAuth()">Continue with Google</button><a class="btn light" href="#directory" style="text-decoration:none">Explore Universities ↓</a></div>
+<div class="hero-note">Search directory • Manual university entry • Anonymous posts • Community voting • Moderation-ready</div>
+</div>
+<div class="hero-visual">
+<div class="float-card float1">✓ Verified university</div><div class="float-card float2">▲ 128 students voted</div><div class="float-card float3">💬 24 discussions</div>
+<div class="dashboard">
+<div class="dash-head"><span class="dash-title">Campus feed</span><span class="live">● LIVE</span></div>
+<div class="problem-mini"><div class="row"><span class="pill">Hostel</span><b>▲ 128</b></div><h4>Hostel Wi‑Fi keeps disconnecting</h4><p>Students are discussing the issue and possible solutions.</p></div>
+<div class="problem-mini"><div class="row"><span class="pill">Examination</span><b>▲ 84</b></div><h4>Exam timetable needs clarification</h4><p>Upvote if this affects you too.</p></div>
+<div class="problem-mini"><div class="row"><span class="pill">Fees</span><b>▲ 57</b></div><h4>Unexpected semester fee increase</h4><p>Transparent, student-led discussion.</p></div>
+</div>
+</div>
+</div>
+</section>
+
+<main>
+<div class="wrap stats">
+<div class="stat"><div class="stat-num" id="statUniversities">1,300+</div><div class="stat-label">Universities in directory</div></div>
+<div class="stat"><div class="stat-num" id="statProblems">0</div><div class="stat-label">Community problems</div></div>
+<div class="stat"><div class="stat-num">4</div><div class="stat-label">University categories</div></div>
+<div class="stat"><div class="stat-num">∞</div><div class="stat-label">Student voices</div></div>
+</div>
+
+<section class="section" id="directory">
+ <div class="wrap">
+  <div class="section-head">
+   <div><div class="kicker">University directory</div><h2>Popular universities</h2><p>Start with a short list of popular universities. The complete university directory remains available when you need to search by name, city, state or type.</p></div>
+   <button class="btn secondary" onclick="openUniversityRequest()">＋ Add missing university</button>
+  </div>
+  <div class="directory-shell">
+   <div class="dir-grid" id="featuredUniversityGrid"></div>
+   <div style="display:flex;justify-content:center;margin-top:18px">
+    <button class="btn primary" id="showAllUniversitiesBtn" onclick="showFullDirectory()">Explore all universities →</button>
+   </div>
+   <div id="fullDirectoryPanel" class="hide" style="margin-top:20px">
+    <div class="sub" style="margin:0 0 10px">🔎 Search for your university — only matching results will appear.</div>
+   <div class="directory-top">
+     <div class="searchbox"><span>⌕</span><input id="uniSearch" class="input" placeholder="Search university, city or state…" oninput="renderDirectory()"></div>
+     <select id="stateFilter" class="select" style="max-width:210px" onchange="renderDirectory()"><option value="">All states</option></select>
+    </div>
+    <div class="filters" id="typeFilters">
+     <button class="filter active" data-type="" onclick="setType(this,'')">All</button>
+     <button class="filter" data-type="Central" onclick="setType(this,'Central')">Central</button>
+     <button class="filter" data-type="State" onclick="setType(this,'State')">State</button>
+     <button class="filter" data-type="Deemed" onclick="setType(this,'Deemed')">Deemed</button>
+     <button class="filter" data-type="Private" onclick="setType(this,'Private')">Private</button>
+    </div>
+    <div class="result-count" id="dirCount"></div>
+    <div class="dir-grid" id="directoryGrid"></div>
+   </div>
+   <div class="missing"><div><b>Can’t find your university?</b><span>No problem. Enter its name manually, select its type, and submit your problem without waiting for the directory.</span></div><button class="btn primary" onclick="openUniversityRequest()">Enter manually →</button></div>
+  </div>
+ </div>
+</section>
+
+<section class="section" id="problems" style="padding-top:10px">
+<div class="wrap">
+<div class="section-head"><div><div class="kicker">Reddit-style community</div><h2>What students are talking about</h2><p>Problems become discussions. Students can vote, comment, report and follow what is happening at their campus.</p></div></div>
+<div class="problem-layout">
+<div>
+<div class="controls"><input id="problemSearch" class="input search-wide" placeholder="Search problems…" oninput="renderProblems()"><select id="problemUniFilter" class="select" style="max-width:240px" onchange="renderProblems()"><option value="">All universities</option></select><select id="catFilter" class="select" style="max-width:170px" onchange="renderProblems()"><option value="">All categories</option><option>Academics</option><option>Examination</option><option>Hostel</option><option>Fees</option><option>Infrastructure</option><option>Transport</option><option>Administration</option><option>Other</option></select></div>
+<div class="problem-grid" id="problemGrid"></div>
+</div>
+<aside>
+<div class="side-card"><h3>🔥 Trending</h3><div class="trend"><b>Hostel & Wi‑Fi issues</b><small>128 votes · 24 comments</small></div><div class="trend"><b>Exam timetable</b><small>84 votes · 17 comments</small></div><div class="trend"><b>Fee transparency</b><small>57 votes · 12 comments</small></div></div>
+<div class="side-card"><h3>🛡️ Community rule</h3><p class="sub">Discuss the issue, not the person. No harassment, threats, spam or personal information.</p><button class="btn secondary full" style="margin-top:10px" onclick="openPost()">Report a problem</button></div>
+</aside>
+</div>
+</div>
+</section>
+
+<section class="section" id="features" style="background:#fff">
+<div class="wrap">
+<div class="section-head"><div><div class="kicker">Built for scale</div><h2>More than a complaint box</h2><p>CampusReport combines a structured university directory with a student community — closer to a knowledge base + discussion platform.</p></div></div>
+<div class="feature-grid">
+<div class="feature"><div class="feature-icon">🏛️</div><h3>University communities</h3><p>Every university can have its own page, feed, discussions and student issues.</p></div>
+<div class="feature"><div class="feature-icon">🔎</div><h3>Smart discovery</h3><p>Search by name, city or state and filter Central, State, Deemed or Private.</p></div>
+<div class="feature"><div class="feature-icon">✍️</div><h3>Manual university entry</h3><p>Missing from the directory? Enter the university yourself and continue to the problem report.</p></div>
+<div class="feature"><div class="feature-icon">🗳️</div><h3>Community voting</h3><p>Upvote important issues so the problems affecting more students rise naturally.</p></div>
+<div class="feature"><div class="feature-icon">💬</div><h3>Comments & discussion</h3><p>Students can add context, suggestions and useful updates below each problem.</p></div>
+<div class="feature"><div class="feature-icon">🛡️</div><h3>Moderation-ready</h3><p>Reports, pending universities and future moderator roles keep the platform safer.</p></div>
+</div>
+</div>
+</section>
+
+<section class="section how" id="how">
+<div class="wrap">
+<div class="section-head"><div><div class="kicker" style="color:#86efac">Simple for students</div><h2>From problem to community</h2><p>Four steps are enough to turn a campus issue into a visible, discussable community post.</p></div></div>
+<div class="steps">
+<div class="step"><div class="step-num">1</div><h3>Find your university</h3><p>Search the directory or enter your university manually if it is not listed.</p></div>
+<div class="step"><div class="step-num">2</div><h3>Describe the issue</h3><p>Add a clear title, details and category. You can post anonymously.</p></div>
+<div class="step"><div class="step-num">3</div><h3>Students respond</h3><p>Other students vote, comment, add context and report inappropriate content.</p></div>
+<div class="step"><div class="step-num">4</div><h3>Issue gets visibility</h3><p>Important issues rise in the community and can later be tracked toward resolution.</p></div>
+</div>
+</div>
+</section>
+
+<section class="section"><div class="wrap"><div class="cta"><div><h2>Your university missing?</h2><p>Don’t wait for the directory. Add it manually and submit your issue today.</p></div><button class="btn" onclick="openUniversityRequest()">Add university manually →</button></div></div></section>
+
+<section class="section" id="faq">
+<div class="wrap"><div class="section-head"><div><div class="kicker">FAQ</div><h2>Questions students may have</h2></div></div>
+<div class="faq">
+<details open><summary>What if my university is not listed?</summary><p>Click “Add missing university”, enter its name, city, state and type, then continue directly to the problem form. The university can remain pending until a moderator verifies it.</p></details>
+<details><summary>Can I post anonymously?</summary><p>Yes. The problem form includes an anonymous posting option. Your public post can show “Anonymous” instead of your name.</p></details>
+<details><summary>Will every university be verified?</summary><p>The production directory can be seeded from authoritative sources such as UGC and then moderated. User-submitted universities can carry a pending label until reviewed.</p></details>
+<details><summary>Is CampusReport only for complaints?</summary><p>No. The goal is a community layer around universities: problems, discussions, voting, reviews, updates and eventually structured university information.</p></details>
+</div></div>
+</section>
+</main>
+
+<footer>
+<div class="foot">
+<div><h3>CampusReport</h3><p>A student-first platform for discovering universities, discussing campus problems and making student voices visible.</p></div>
+<div><h3>Explore</h3><a href="#directory" onclick="showFullDirectory()">University Directory</a><a href="#problems">Problems</a><a href="#features">Features</a></div>
+<div><h3>Community</h3><a href="#how">How it works</a><a href="#faq">Safety & FAQ</a><a href="#" onclick="openPost();return false">Report a problem</a></div>
+<div><h3>Future</h3><p>University pages</p><p>Moderation tools</p><p>Student profiles</p><p>Notifications</p></div>
+</div>
+<div class="copy">© 2026 CampusReport · Student community · University directory connected to Supabase. User-submitted universities remain pending until verified.</div>
+</footer>
+
+<!-- AUTH -->
+<div class="modal" id="authModal">
+  <div class="box smallbox">
+    <button class="close" onclick="closeModal('authModal')">✕</button>
+    <div style="text-align:center">
+      <div class="logo" style="margin:4px auto 14px;width:52px;height:52px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <path d="M4 5.5h16v13H4z"/><path d="M8 9h8M8 13h5"/>
+        </svg>
+      </div>
+      <h2 id="authTitle">Continue with Google</h2>
+      <p class="sub">Use your Google account to create or access your CampusReport account.</p>
+      <button class="btn primary full" id="googleAuthBtn" onclick="signInWithGoogle()" style="display:flex;align-items:center;justify-content:center;gap:10px">
+        <span style="background:#fff;color:#4285f4;border-radius:7px;width:24px;height:24px;display:grid;place-items:center;font-weight:950;font-size:16px">G</span>
+        Continue with Google
+      </button>
+      <div id="authMsg" class="msg"></div>
+      <p class="sub" style="margin-top:14px;font-size:12px">
+        No email verification or password is required.
+      </p>
+    </div>
+  </div>
+</div>
+<!-- UNIVERSITY REQUEST -->
+<div class="modal" id="universityModal"><div class="box"><button class="close" onclick="closeModal('universityModal')">✕</button><h2>Find your university</h2><p class="sub">If your university is missing, enter it manually. You can continue to the problem report immediately.</p>
+<div class="field"><label>University / College name *</label><input id="manualUniName" class="input" placeholder="e.g. XYZ University"></div>
+<div class="two"><div class="field"><label>City *</label><input id="manualCity" class="input" placeholder="e.g. Patna"></div><div class="field"><label>State *</label><select id="manualState" class="select"><option value="">Select state</option></select></div></div>
+<div class="field"><label>Type *</label><div class="choice-grid" id="typeChoice"><button class="choice active" data-value="Private" onclick="chooseType(this)"><b>Private</b><small>State private / self-financed</small></button><button class="choice" data-value="State" onclick="chooseType(this)"><b>State</b><small>State public university</small></button><button class="choice" data-value="Central" onclick="chooseType(this)"><b>Central</b><small>Central government</small></button><button class="choice" data-value="Deemed" onclick="chooseType(this)"><b>Deemed</b><small>Deemed-to-be university</small></button></div></div>
+<label class="toggle"><input id="manualAnonymous" type="checkbox"> Keep my university request anonymous</label>
+<button class="btn primary full" style="margin-top:16px" onclick="continueManualUniversity()">Continue to report problem →</button>
+<div id="uniMsg" class="msg"></div>
+</div></div>
+
+<!-- POST -->
+<div class="modal" id="postModal"><div class="box"><button class="close" onclick="closeModal('postModal')">✕</button><h2>Report a student problem</h2><p class="sub">Choose a listed university or use the manual university you entered.</p>
+<div class="field">
+<label>University / College *</label>
+<div class="searchbox" style="margin-bottom:10px">
+  <span>⌕</span>
+  <input id="postUniversitySearch" class="input" placeholder="Search university by name, city or state…" oninput="filterPostUniversities()">
+</div>
+<select id="postUniversity" class="select"></select><div style="margin-top:8px"><button class="ghost" style="border:0;padding:0;color:#15803d;font-weight:900" onclick="closeModal('postModal');openUniversityRequest()">＋ My university is not listed</button></div></div>
+<div class="field"><label>Problem title *</label><input id="postTitle" class="input" placeholder="e.g. Hostel Wi‑Fi is not working"></div>
+<div class="field"><label>Describe the problem *</label><textarea id="postBody" class="input" placeholder="Explain what is happening, who is affected and what you think should improve."></textarea></div>
+<div class="two"><div class="field"><label>Category</label><select id="postCategory" class="select"><option>Academics</option><option>Examination</option><option>Hostel</option><option>Fees</option><option>Infrastructure</option><option>Transport</option><option>Administration</option><option>Other</option></select></div><div class="field" style="display:flex;align-items:end"><label class="toggle"><input id="postAnonymous" type="checkbox"> Post anonymously</label></div></div>
+<button class="btn primary full" onclick="createProblem()">Publish problem</button><div id="postMsg" class="msg"></div>
+</div></div>
+
+<!-- COMMENTS -->
+<div class="modal" id="commentsModal"><div class="box"><button class="close" onclick="closeModal('commentsModal')">✕</button><h2>Discussion</h2><div id="commentsList"></div><textarea id="commentText" class="input full" placeholder="Add a constructive comment…" style="margin-top:12px"></textarea><button class="btn primary" style="margin-top:10px" onclick="addComment()">Add comment</button></div></div>
+
+<script>
+const SUPABASE_URL="https://jvtdskcvzpfcctcukqsc.supabase.co";
+const SUPABASE_KEY="sb_publishable_V636eAhNKwotv6eDrrVbGA_GnGjRpUd";
+const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+const STATES=["Andaman and Nicobar Islands","Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chandigarh","Chhattisgarh","Delhi","Goa","Gujarat","Haryana","Himachal Pradesh","Jammu and Kashmir","Jharkhand","Karnataka","Kerala","Ladakh","Lakshadweep","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Puducherry","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal"];
+
+const demoUniversities=[
+["University of Delhi","Central","New Delhi","Delhi"],["Jawaharlal Nehru University","Central","New Delhi","Delhi"],["Banaras Hindu University","Central","Varanasi","Uttar Pradesh"],["Aligarh Muslim University","Central","Aligarh","Uttar Pradesh"],["University of Hyderabad","Central","Hyderabad","Telangana"],["Jamia Millia Islamia","Central","New Delhi","Delhi"],["Indian Institute of Technology Delhi","Central","New Delhi","Delhi"],["Indian Institute of Technology Bombay","Central","Mumbai","Maharashtra"],["Indian Institute of Technology Patna","Central","Patna","Bihar"],["University of Rajasthan","State","Jaipur","Rajasthan"],["Patna University","State","Patna","Bihar"],["Bihar Engineering University","State","Patna","Bihar"],["Mumbai University","State","Mumbai","Maharashtra"],["Savitribai Phule Pune University","State","Pune","Maharashtra"],["University of Calcutta","State","Kolkata","West Bengal"],["University of Lucknow","State","Lucknow","Uttar Pradesh"],["Christ University","Deemed","Bengaluru","Karnataka"],["Manipal Academy of Higher Education","Deemed","Manipal","Karnataka"],["Birla Institute of Technology & Science, Pilani","Deemed","Pilani","Rajasthan"],["Bharati Vidyapeeth","Deemed","Pune","Maharashtra"],["Amity University Rajasthan","Private","Jaipur","Rajasthan"],["Manipal University Jaipur","Private","Jaipur","Rajasthan"],["Ashoka University","Private","Sonipat","Haryana"],["Chandigarh University","Private","Mohali","Punjab"],["Lovely Professional University","Private","Phagwara","Punjab"],["Sharda University","Private","Greater Noida","Uttar Pradesh"],["Shiv Nadar University","Private","Greater Noida","Uttar Pradesh"],["VIT Vellore","Private","Vellore","Tamil Nadu"],["SRM Institute of Science and Technology","Deemed","Chennai","Tamil Nadu"],["Amity University Uttar Pradesh","Private","Noida","Uttar Pradesh"],["Symbiosis International","Deemed","Pune","Maharashtra"],["Suresh Gyan Vihar University","Private","Jaipur","Rajasthan"],["Poornima University","Private","Jaipur","Rajasthan"],["Mody University of Science and Technology","Private","Lakshmangarh","Rajasthan"],["KIIT University","Deemed","Bhubaneswar","Odisha"],["Amity University Patna","Private","Patna","Bihar"],["Galgotias University","Private","Greater Noida","Uttar Pradesh"],["Chitkara University","Private","Rajpura","Punjab"],["Graphic Era University","Private","Dehradun","Uttarakhand"],["Alliance University","Private","Bengaluru","Karnataka"],["Jain University","Deemed","Bengaluru","Karnataka"],["REVA University","Private","Bengaluru","Karnataka"],["Lovely Professional University","Private","Phagwara","Punjab"]
+].map((x,i)=>({id:"demo-"+i,name:x[0],type:x[1],city:x[2],state:x[3],verified:true}));
+
+const demoProblems=[
+{id:"d1",university_id:"demo-21",uni:"Manipal University Jaipur",title:"Hostel Wi‑Fi keeps disconnecting",body:"Students are facing repeated connectivity issues in hostel blocks, especially during evening hours.",category:"Hostel",votes_count:128,comments:24,anonymous:true},
+{id:"d2",university_id:"demo-0",uni:"University of Delhi",title:"Exam timetable needs clarification",body:"Several students are asking for clearer communication about the revised examination schedule.",category:"Examination",votes_count:84,comments:17,anonymous:false},
+{id:"d3",university_id:"demo-21",uni:"Manipal University Jaipur",title:"Unexpected semester fee increase",body:"Students want a transparent explanation of the additional fee components.",category:"Fees",votes_count:57,comments:12,anonymous:true},
+{id:"d4",university_id:"demo-8",uni:"Indian Institute of Technology Patna",title:"Library hours during exams",body:"Students are requesting longer library hours during the examination period.",category:"Infrastructure",votes_count:46,comments:8,anonymous:false}
+];
+
+let universities=[],problems=[],currentUser=null,authMode="signup",activeProblem=null,activeType="",manualUni=null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+const getAuthorName=()=>currentUser?.user_metadata?.full_name||currentUser?.user_metadata?.name||currentUser?.email?.split("@")[0]||"Student";
+function closeModal(id){$(id).classList.remove("show")}
+function showModal(id){$(id).classList.add("show")}
+function notice(msg){$("notice").textContent=msg;$("notice").classList.add("show")}
+function setMsg(id,msg,ok=false){$(id).textContent=msg;$(id).classList.toggle("success",ok)}
+function openAuth(){
+  setMsg("authMsg","");
+  showModal("authModal");
+}
+function updateNav(){
+  const n=$("navActions");
+  if(!n)return;
+  n.innerHTML=currentUser
+    ? '<span class="profile">Signed in</span><button class="btn light" onclick="signOut()">Log out</button><button class="btn primary" onclick="openPost()">Post a Problem</button>'
+    : '<button class="btn secondary" onclick="openAuth()">Sign in with Google</button><button class="btn primary" onclick="openPost()">Post a Problem</button>';
+}
+let googleAuthBusy=false;
+async function signInWithGoogle(){
+  if(googleAuthBusy)return;
+  googleAuthBusy=true;
+  const btn=$("googleAuthBtn");
+  btn.disabled=true;
+  btn.style.opacity=".7";
+  btn.innerHTML='<span style="width:20px;height:20px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin 1s linear infinite"></span> Connecting…';
+  try{
+    const r=await db.auth.signInWithOAuth({
+      provider:"google",
+      options:{redirectTo:"https://campusreport.vercel.app",queryParams:{access_type:"offline",prompt:"select_account"}}
+    });
+    if(r.error)setMsg("authMsg",r.error.message);
+  }catch(e){
+    setMsg("authMsg",e?.message||"Google sign-in could not start. Please try again.");
+  }finally{
+    googleAuthBusy=false;
+    btn.disabled=false;
+    btn.style.opacity="1";
+    btn.innerHTML='<span style="background:#fff;color:#4285f4;border-radius:7px;width:24px;height:24px;display:grid;place-items:center;font-weight:950;font-size:16px">G</span> Continue with Google';
+  }
+}
+async function signOut(){await db.auth.signOut();currentUser=null;updateNav();renderProblems()}
+function fillStates(){
+ const s=$("stateFilter"),m=$("manualState");s.innerHTML='<option value="">All states</option>'+STATES.map(x=>`<option>${esc(x)}</option>`).join("");m.innerHTML='<option value="">Select state</option>'+STATES.map(x=>`<option>${esc(x)}</option>`).join("");
+}
+function setType(btn,type){activeType=type;document.querySelectorAll("#typeFilters .filter").forEach(x=>x.classList.toggle("active",x===btn));renderDirectory()}
+function normalizeRows(rows){
+  return (rows||[]).map((u,i)=>({
+    id:u.id||("db-"+i),name:u.name||"University",type:u.type||"Other",
+    city:u.city||"",state:u.state||"",status:u.status||"approved",
+    website:u.website||"",slug:u.slug||"",ugc_code:u.ugc_code||"",
+    ugc_status:u.ugc_status||"",source:u.source||"",
+    verified:u.verified===true || (u.status ? u.status==="approved" : true),db:true
+  }));
+}
+
+async function loadUniversities(){
+  let dbRows=[];
+  try{
+    // Load every row, including rows beyond Supabase's default first 1,000.
+    const pageSize=1000;
+    for(let from=0; from<10000; from+=pageSize){
+      const r=await db.from("universities").select("*").order("name").range(from,from+pageSize-1);
+      if(r.error) throw r.error;
+      const page=r.data||[];
+      dbRows.push(...page);
+      if(page.length<pageSize) break;
+    }
+  }catch(e){ console.warn("University directory load failed:",e); }
+
+  universities=dbRows.length?normalizeRows(dbRows):demoUniversities.slice();
+  $("statUniversities").textContent=dbRows.length?dbRows.length.toLocaleString():"1,300+";
+  const pf=$("problemUniFilter"),pp=$("postUniversity");
+  pf.innerHTML='<option value="">All universities</option>'+universities.map(u=>`<option value="${esc(u.id)}">${esc(u.name)}</option>`).join("");
+  pp.innerHTML='<option value="">Select university</option>'+universities.map(u=>`<option value="${esc(u.id)}">${esc(u.name)} · ${esc(u.city)}</option>`).join("");
+  renderDirectory();
+}
+const FEATURED_UNIVERSITIES=["University of Delhi","Jawaharlal Nehru University","Banaras Hindu University","Aligarh Muslim University","University of Hyderabad","Jamia Millia Islamia","University of Rajasthan","University of Mumbai","Chandigarh University","Lovely Professional University"];
+function uniCard(u){
+ return `<article class="uni-card" onclick="chooseListedUniversity('${esc(u.id).replace(/'/g,"&#039;")}')"><div class="uni-top"><div class="uni-logo">${esc(u.name.slice(0,1))}</div><div><h3>${esc(u.name)}</h3><div class="uni-meta">${esc(u.city)}, ${esc(u.state)}</div><div class="uni-meta ${u.verified?"verified":""}">${u.verified?"✓ Verified":"Pending verification"}</div></div></div><div class="uni-bottom"><span class="type">${esc(u.type)}</span><span class="open-link">View community →</span></div></article>`;
+}
+function renderFeaturedUniversities(){
+ const chosen=[];
+ FEATURED_UNIVERSITIES.forEach(name=>{const u=universities.find(x=>String(x.name||"").trim().toLowerCase()===name.toLowerCase());if(u&&!chosen.some(y=>String(y.id)===String(u.id)))chosen.push(u)});
+ universities.forEach(u=>{if(chosen.length<10&&!chosen.some(y=>String(y.id)===String(u.id)))chosen.push(u)});
+ $("featuredUniversityGrid").innerHTML=chosen.slice(0,10).map(uniCard).join("");
+}
+function showFullDirectory(){
+  const panel=$("fullDirectoryPanel");
+  const btn=$("showAllUniversitiesBtn");
+  if(panel){
+    panel.classList.remove("hide");
+    panel.style.display="";
+  }
+  if(btn) btn.classList.add("hide");
+  const search=$("uniSearch");
+  if(search){
+    search.value="";
+    renderDirectory();
+    setTimeout(()=>search.focus(),300);
+  }else{
+    renderDirectory();
+  }
+  setTimeout(()=>panel?.scrollIntoView({behavior:"smooth",block:"start"}),50);
+}
+function renderDirectory(){
+  const q=($("uniSearch")?.value||"").trim().toLowerCase();
+  const state=$("stateFilter")?.value||"";
+  const list=(universities||[]).filter(u=>{
+    const text=[u.name,u.city,u.state,u.type].filter(Boolean).join(" ").toLowerCase();
+    return (!activeType||u.type===activeType)&&(!state||u.state===state)&&(!q||text.includes(q));
+  });
+  const grid=$("directoryGrid");
+  const count=$("dirCount");
+  if(!q && !state && !activeType){
+    if(count) count.textContent="Type a university name, city or state to search. Showing up to 10 results.";
+    if(grid) grid.innerHTML='<div class="empty">🔎<br><br><b>Search for your university</b><br><span class="sub">The full directory stays hidden. Start typing above.</span></div>';
+    return;
+  }
+  if(count) count.textContent=`${list.length.toLocaleString()} result${list.length===1?"":"s"} found · showing up to 10`;
+  if(grid){
+    grid.innerHTML=list.length
+      ? list.slice(0,10).map(uniCard).join("")
+      : '<div class="empty">😕<br><br><b>No matching university found.</b><br><br><button class="btn primary" onclick="openUniversityRequest()">Enter it manually →</button></div>';
+  }
+}
+function chooseListedUniversity(id){
+  const u=universities.find(x=>String(x.id)===String(id));
+  if(!u)return;
+  // Directory search/selection must not hide the homepage's recent community posts.
+  // University-specific filtering remains available through the Problems filter.
+  $("problems").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function openUniversityRequest(){
+ setMsg("uniMsg","");
+ $("manualUniName").value="";$("manualCity").value="";$("manualState").value="";manualUni=null;
+ document.querySelectorAll("#typeChoice .choice").forEach((x,i)=>x.classList.toggle("active",i===0));
+ showModal("universityModal");
+}
+function chooseType(btn){document.querySelectorAll("#typeChoice .choice").forEach(x=>x.classList.remove("active"));btn.classList.add("active")}
+function selectedType(){return document.querySelector("#typeChoice .choice.active")?.dataset.value||"Private"}
+async function continueManualUniversity(){
+  const name=$("manualUniName").value.trim(),city=$("manualCity").value.trim(),state=$("manualState").value,type=selectedType();
+  const anonymous=$("manualAnonymous").checked;
+  if(!name||!city||!state){setMsg("uniMsg","University name, city and state are required.");return}
+
+  const duplicate=universities.find(u=>
+    String(u.name||"").trim().toLowerCase()===name.toLowerCase() &&
+    String(u.state||"").trim().toLowerCase()===state.toLowerCase()
+  );
+  if(duplicate){
+    setMsg("uniMsg","This university already exists in the directory. Please select it from the list.",true);
+    return;
+  }
+
+  let onlineSaved=false;
+  if(currentUser){
+    try{
+      const r=await db.from("university_requests").insert({
+        user_id:currentUser.id,name,city,state,type,anonymous,status:"pending"
+      });
+      if(!r.error) onlineSaved=true;
+      else console.warn("University request insert failed:",r.error);
+    }catch(e){ console.warn("University request insert failed:",e); }
+  }
+
+  const req=JSON.parse(localStorage.getItem("campusreport_university_requests")||"[]");
+  req.push({name,city,state,type,anonymous,status:"pending",online_saved:onlineSaved,created_at:new Date().toISOString()});
+  localStorage.setItem("campusreport_university_requests",JSON.stringify(req));
+
+  manualUni={id:"manual-"+Date.now(),name,city,state,type,pending:true,db:false};
+  universities.unshift(manualUni);
+
+  const opt=document.createElement("option");
+  opt.value=manualUni.id;
+  opt.textContent=`${name} · ${city} · Pending`;
+  $("postUniversity").appendChild(opt);
+  $("postUniversity").value=manualUni.id;
+
+  closeModal("universityModal");
+  openPost(true);
+  notice(onlineSaved
+    ?"University request submitted to CampusReport for verification."
+    :"University request saved locally. The request table/RLS needs checking before production.");
+}
+
+function filterPostUniversities(){
+  const q=($("postUniversitySearch")?.value||"").trim().toLowerCase();
+  const select=$("postUniversity");
+  if(!select)return;
+  const current=select.value;
+  const matches=(universities||[]).filter(u=>{
+    const text=[u.name,u.city,u.state,u.type].filter(Boolean).join(" ").toLowerCase();
+    return !q || text.includes(q);
+  }).slice(0,10);
+  select.innerHTML='<option value="">Select university</option>'+matches.map(u=>`<option value="${esc(u.id)}">${esc(u.name)} · ${esc(u.city)}</option>`).join("");
+  if(matches.some(u=>String(u.id)===String(current))) select.value=current;
+  if(!matches.length && q){
+    select.innerHTML='<option value="">No matching university found</option>';
+  }
+}
+function openPost(keepManual=false){
+ if(!currentUser){openAuth();return}
+ if(!keepManual){manualUni=null}
+ $("postMsg").textContent="";
+ if($("postUniversitySearch")) $("postUniversitySearch").value="";
+ showModal("postModal");
+ if(manualUni){
+   $("postUniversity").value=manualUni.id;
+ }else{
+   const select=$("postUniversity");
+   if(select){
+     select.innerHTML='<option value="">Select university</option>'+
+       (universities||[]).map(u=>`<option value="${esc(u.id)}">${esc(u.name)} · ${esc(u.city)}</option>`).join("");
+     select.value="";
+   }
+ }
+}
+async function createProblem(){
+ if(!currentUser){closeModal("postModal");openAuth();return}
+ const uniId=$("postUniversity").value,title=$("postTitle").value.trim(),body=$("postBody").value.trim(),cat=$("postCategory").value,anon=$("postAnonymous").checked;
+ if(!uniId||!title||!body){setMsg("postMsg","Please select a university and fill the required fields.");return}
+ const u=universities.find(x=>String(x.id)===String(uniId));
+ if(!u?.db){setMsg("postMsg","This university is pending verification. Please select a listed university before publishing a public post.");return}
+ const payload={title,body,category:cat,anonymous:anon,user_id:currentUser.id,author_id:currentUser.id,author_name:anon?null:getAuthorName()};
+ try{
+   const r=await db.from("problems").insert({...payload,university_id:u.id}).select().single();
+   if(r.error){
+     console.error("Problem publish failed:",r.error);
+     setMsg("postMsg",`Could not publish: ${r.error.message||"database error"}`);
+     return;
+   }
+   $("postTitle").value="";$("postBody").value="";$("postAnonymous").checked=false;closeModal("postModal");
+   await loadProblems();
+   notice("Problem published to the community. It is now visible across devices.");
+ }catch(e){
+   console.error("Problem publish failed:",e);
+   setMsg("postMsg",`Could not publish: ${e?.message||"database error"}`);
+ }
+}
+async function syncLocalProblems(){
+ const raw=JSON.parse(localStorage.getItem("campusreport_local_problems")||"[]");
+ if(!currentUser||!raw.length)return;
+ const remaining=[]; let synced=0;
+ for(const p of raw){
+   const u=universities.find(x=>String(x.id)===String(p.university_id)&&x.db);
+   if(!u){remaining.push(p);continue}
+   const payload={title:p.title,body:p.body,category:p.category||"Other",anonymous:!!p.anonymous,user_id:currentUser.id,author_id:currentUser.id,author_name:p.anonymous?null:(p.author_name||getAuthorName()),university_id:u.id};
+   try{const r=await db.from("problems").insert(payload); if(r.error)remaining.push(p); else synced++}catch(e){remaining.push(p)}
+ }
+ localStorage.setItem("campusreport_local_problems",JSON.stringify(remaining));
+ if(synced)notice(`${synced} local post${synced===1?"":"s"} synced to the public community.`);
+}
+async function loadProblems(){
+ let arr=[];
+ try{
+  const r=await db.from("problems").select("*, universities(name)").order("created_at",{ascending:false});
+  if(!r.error) arr=(r.data||[]).map(p=>({...p,body:p.body??p.details??"",anonymous:p.anonymous??p.is_anonymous??false,uni:p.universities?.name||"University"}));
+  else console.warn("Problems load failed:",r.error);
+ }catch(e){console.warn("Problems load failed:",e)}
+ problems=[...arr,...demoProblems];
+ $("statProblems").textContent=Math.max(arr.length,4).toLocaleString();
+ if(currentUser&&arr.length){try{const ids=arr.map(p=>p.id);const v=await db.from("votes").select("problem_id").eq("user_id",currentUser.id).in("problem_id",ids);const set=new Set((v.data||[]).map(x=>x.problem_id));problems.forEach(p=>p.user_voted=set.has(p.id))}catch(e){}}
+ renderProblems();
+}
+function renderProblems(){
+ const q=($("problemSearch").value||"").toLowerCase(),uid=$("problemUniFilter").value,cat=$("catFilter").value;
+ const list=problems.filter(p=>(!uid||String(p.university_id)===String(uid))&&(!cat||p.category===cat)&&(!q||(p.title+" "+p.body+" "+(p.uni||"")).toLowerCase().includes(q)));
+ $("problemGrid").innerHTML=list.length?list.slice(0,50).map(p=>`<article class="problem"><span class="pill">${esc(p.category||"Other")}</span><h3>${esc(p.title)}</h3><div class="problem-meta">${esc(p.uni||"University")} · ${p.anonymous||p.is_anonymous?"Anonymous":esc(p.author_name||"Student")}</div><div class="problem-body">${esc(p.body)}</div><div class="problem-actions"><button class="vote ${p.user_voted?"active":""}" onclick="voteProblem('${esc(p.id)}')">▲ ${p.votes_count||0} Vote</button><button class="vote" onclick="openComments('${esc(p.id)}')">💬 ${p.comments||0} Comments</button><button class="vote" onclick="reportProblem('${esc(p.id)}')">⚑ Report</button></div></article>`).join(""):'<div class="empty">No problems found.<br><br>Try another search or report the first issue.</div>';
+}
+async function voteProblem(id){
+ if(!currentUser){openAuth();return}
+ if(id.startsWith("demo-")||id.startsWith("local-")){const p=problems.find(x=>x.id===id);if(p){p.user_voted=!p.user_voted;p.votes_count=Math.max(0,(p.votes_count||0)+(p.user_voted?1:-1));renderProblems()}return}
+ const r=await db.from("votes").select("id").eq("problem_id",id).eq("user_id",currentUser.id).maybeSingle();if(r.error){alert(r.error.message);return}
+ const x=r.data?await db.from("votes").delete().eq("id",r.data.id):await db.from("votes").insert({problem_id:id,user_id:currentUser.id});if(x.error){alert(x.error.message);return}await loadProblems();
+}
+async function openComments(id){
+ activeProblem=id;$("commentsList").innerHTML='<div class="sub">Loading…</div>';$("commentText").value="";showModal("commentsModal");
+ if(id.startsWith("demo-")||id.startsWith("local-")){$("commentsList").innerHTML='<div class="sub">Community comments will appear here. Connect the Supabase migration to persist comments.</div>';return}
+ const r=await db.from("comments").select("*").eq("problem_id",id).order("created_at",{ascending:true});
+ if(r.error){$("commentsList").textContent=r.error.message;return}
+ $("commentsList").innerHTML=r.data?.length?r.data.map(c=>`<div style="padding:10px 0;border-bottom:1px solid #edf0f4"><b style="font-size:11px">${c.is_anonymous?"Anonymous":"Student"}</b><div style="font-size:12px;margin-top:4px">${esc(c.body)}</div></div>`).join(""):'<div class="sub">No comments yet.</div>';
+}
+async function addComment(){
+ if(!currentUser){closeModal("commentsModal");openAuth();return}
+ const body=$("commentText").value.trim();if(!body)return;
+ if(activeProblem.startsWith("demo-")||activeProblem.startsWith("local-")){notice("Demo/local comments are shown in this prototype. Supabase migration will make them persistent.");return}
+ const r=await db.from("comments").insert({problem_id:activeProblem,body,author_id:currentUser.id,is_anonymous:false});if(r.error){alert(r.error.message);return}openComments(activeProblem);loadProblems();
+}
+async function reportProblem(id){
+ if(!currentUser){openAuth();return}
+ const reason=prompt("Why are you reporting this problem?","Inappropriate content");if(!reason)return;
+ if(id.startsWith("demo-")||id.startsWith("local-")){notice("Report recorded for moderation in prototype mode.");return}
+ const r=await db.from("reports").insert({problem_id:id,reporter_id:currentUser.id,reason});notice(r.error?"Report failed: "+r.error.message:"Thanks. Your report was submitted.");
+}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".modal.show").forEach(m=>m.classList.remove("show"))});
+async function init(){
+ fillStates();
+ try{const s=await db.auth.getSession();currentUser=s.data.session?.user||null}catch(e){currentUser=null}
+ updateNav();
+ await loadUniversities();
+ await syncLocalProblems();
+ await loadProblems();
+}
+db.auth.onAuthStateChange(async (_event,session)=>{
+ currentUser=session?.user||null;
+ updateNav();
+ if(currentUser){await syncLocalProblems();await loadProblems();}
+});
+init();
+</script>
+</body>
+</html>
